@@ -8,6 +8,29 @@
     <base href="/" />
     <link href="css/bootstrap/bootstrap.min.css" rel="stylesheet" />
     <link href="css/app.css" rel="stylesheet" />
+    <script type="text/javascript" src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js"></script>
+    <script type="text/javascript">
+        var qrCode;
+
+        window.generateQRCode = (inputTexts) => {
+            console.log(inputTexts);
+            
+            var interval = setInterval(() => {
+                if (inputTexts?.length) {
+                    if(qrCode == null) {
+                        qrCode = new QRCode(document.getElementById("qrCode"), inputTexts[0]);
+                    } else {
+                        qrCode.makeCode(inputTexts[0]);
+                    }
+
+                    inputTexts.shift();
+                } else {
+                    clearInterval(interval);
+                }
+                
+            }, 1);
+        }
+    </script>
 </head>
 
 <body>
