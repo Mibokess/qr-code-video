@@ -9,10 +9,13 @@
     <link href="css/bootstrap/bootstrap.min.css" rel="stylesheet" />
     <link href="css/app.css" rel="stylesheet" />
     <script type="text/javascript" src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js"></script>
+    <script src="_content/BlazorInputFile/inputfile.js"></script>
+
     <script type="text/javascript">
         var qrCode;
+        var videoSource;
 
-        window.generateQRCode = (inputTexts) => {
+        window.generateQRCode = (inputTexts, speed) => {
             console.log(inputTexts);
             
             var interval = setInterval(() => {
@@ -28,7 +31,7 @@
                     clearInterval(interval);
                 }
                 
-            }, 1);
+            }, speed);
         }
     </script>
 </head>
