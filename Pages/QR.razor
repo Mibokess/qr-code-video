@@ -16,6 +16,11 @@
     @status
 </div>
 
+<video type="video/mp4" id="player" controls></video>
+<button @onclick="PlayVideo">Play video</button>
+<canvas id="frame"></canvas>
+<p id="progress"></p>
+
 @if (fileName != null)
 {
     <h3>@fileName</h3>
@@ -58,7 +63,7 @@
 
                 for (int i = 0; (hexIn = reader.ReadByte()) != -1; ++i)
                 {
-                    stringBuilder.Append(string.Format("{0:X2}", hexIn));
+                    stringBuilder.Append(string.Format("{0:X2}", hexIn)); //Convert.ToString(hexIn, 2)
                     inputFile[i] = (byte) hexIn;
                 }
 
@@ -71,9 +76,9 @@
         }
     }
 
-    void ScanQRVideo() 
+    async void PlayVideo() 
     {
-
+        await JSRuntime.InvokeVoidAsync("playVideo", fileTextContents);
     }
 
     async void GenerateQRCode()
