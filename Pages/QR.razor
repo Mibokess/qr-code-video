@@ -16,10 +16,12 @@
     @status
 </div>
 
-<video type="video/mp4" id="player" controls></video>
+<video type="video/mp4" id="player" width="480" height="270" controls></video>
 <button @onclick="PlayVideo">Play video</button>
 <canvas id="frame"></canvas>
 <p id="progress"></p>
+
+<button @onclick="ExtractFrames">Extract frames</button>
 
 @if (fileName != null)
 {
@@ -39,6 +41,10 @@
     string ChunkSize {get; set;} = "";
     const int speed = 500;
 
+    async void ExtractFrames()
+    {
+        await JSRuntime.InvokeVoidAsync("extractFrames");
+    }
     async Task ViewFile(IFileListEntry[] files)
     {
         var file = files.FirstOrDefault();
@@ -55,7 +61,7 @@
         {
             status = "Loading...";
 
-            using (var reader = await file.ReadAllAsync())
+            using (var reader = await file.ReadAllAsync(MaxFileSize))
             {
                 int hexIn;
                 StringBuilder stringBuilder = new StringBuilder((int) reader.Length);
@@ -75,12 +81,10 @@
             status = DefaultStatus;
         }
     }
-
     async void PlayVideo() 
     {
         await JSRuntime.InvokeVoidAsync("playVideo", fileTextContents);
     }
-
     async void GenerateQRCode()
     {
         var SplitInputText = ChunksUpto(InputText, int.Parse(ChunkSize));
@@ -88,7 +92,6 @@
 
         await JSRuntime.InvokeAsync<string>("generateQRCode", SplitInputText, speed); 
     }
-
     static IEnumerable<string> ChunksUpto(string input, int maxChunkSize) 
     {
         for (int i = 0; i < input.Length; i += maxChunkSize) 
