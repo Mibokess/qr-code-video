@@ -62,39 +62,38 @@
       
       ffmpeg.FS('writeFile', name, await fetchFile(webcamData));
       
-      await ffmpeg.run('-i', name, '-vf', 'fps=1,scale=320:240', 'out%d.jpg');
+      await ffmpeg.run('-i', name, '-vf', 'format=rgba,fps=1,scale=320:240', '-f', 'rawvideo', 'out.bin');
       
       message.innerHTML = 'Complete transcoding';
 
-      for(let i = 1; i < 2; i++) {
-        try {
-          const data = ffmpeg.FS('readFile', `out${i}.jpg`);
+      const data = ffmpeg.FS('readFile', `out.bin`);
+      const frames = [];
 
-          var canvas = document.getElementById('canvas');
-          var context = canvas.getContext('2d');
-          var img = new Image;
-          img.src = URL.createObjectURL(new Blob([data.buffer], { type: 'img/jpg' }));
-          
-          img.onload = () => {
-            canvas.width = img.width;
-            canvas.height = img.height;
-            context.drawImage(img, 0, 0);
+      const frameSize = 4 * width * height;
 
-            var imageData = context.getImageData(0, 0, img.width, img.height);
-            
-            const code = jsQR(imageData, width, height);
+      for (let i = 0; i < data.length - frameSize; i += frameSize) {
+        frames.push(data.slice(i, i + frameSize))
+      }
 
-            if (code) {
-              console.log('code');
-              console.log(code);
-            } else {
-              console.log("No code");
-            }
-          }
-        } catch (e) {
-          console.log(e);
-          break;
+      for (let frameIndex = 0; frameIndex < frames.length; ++frameIndex) {
+        let imageData = new ImageData(width, height);
+
+        for (let i = 0; i < imageData.length; i += 4) {
+          imageData[i] = frames[frameIndex][i]; 
+          imageData[i + 1] = frames[frameIndex][i + 1]; 
+          imageData[i + 2] = frames[frameIndex][i + 2]; 
+          imageData[i + 3] = frames[frameIndex][i + 3]; 
         }
+
+        const code = jsQR(imageData, width, height);
+  
+        if (code) {
+          console.log('code');
+          console.log(code);
+        } else {
+          console.log("No code");
+        }
+
       }
     }
   });
