@@ -1,27 +1,41 @@
-<div>
+<div class="flex">
   <div>
-    <video id="webcam" width="{width}px" height="{height}px"></video>
-    <canvas id="canvas" src={src} width="{width}px" height="{height}px"/>
-  </div>
+    <div>
+      <video id="webcam" width="{width}px" height="{height}px"></video>
+      <canvas id="canvas" src={src} width="{width}px" height="{height}px"/>
+    </div>
 
-  <button id="record" disabled>Start Recording</button>
-  <p id="message"></p>
+    <button id="record" disabled>Start Recording</button>
+    <p id="message"></p>
+  </div>
+  <div>
+    <div>
+      <input id="input" type="text" bind:value={inputValue} on:change={encode}/>
+    </div>
+    <div>
+      <div id="qrCode"/>
+      <canvas id="qrCode2" height="400px" width="400px"/>
+    </div>
+  </div>
 </div>
 
-<script lang="js">
+<script lang="ts">
   import { onMount } from 'svelte';
   import { createFFmpeg, fetchFile } from "@ffmpeg/ffmpeg";
   import jsQR from 'jsqr';
   
-  const width = 320;
-  const height = 240;
+  import { qrcode, modes, ecLevel } from 'qrcode.es';
+  
+  const width = 400;
+  const height = 400;
 
+  let inputValue = "";
   let src = "";
   const ffmpeg = createFFmpeg({ log: true });
 
   onMount(() => {  
-    const webcam = document.getElementById('webcam');
-    const recordBtn = document.getElementById('record');
+    const webcam: HTMLVideoElement = document.getElementById('webcam');
+    const recordBtn: HTMLButtonElement = document.getElementById('record');
 
     const startRecording = () => {
       const rec = new MediaRecorder(webcam.srcObject);
@@ -39,6 +53,7 @@
         transcode(new Uint8Array(await (new Blob(chunks)).arrayBuffer()));
       };
       rec.start();
+
     };
 
     (async () => {
@@ -48,6 +63,8 @@
 
       recordBtn.disabled = false;
       recordBtn.onclick = startRecording;
+
+      await ffmpeg.load();
     })();
   
     const transcode = async (webcamData) => {
@@ -55,8 +72,6 @@
       const name = 'record.webm';
       
       message.innerHTML = 'Loading ffmpeg-core.js';
-      
-      await ffmpeg.load();
       
       message.innerHTML = 'Start transcoding';
       
@@ -75,17 +90,22 @@
         frames.push(data.slice(i, i + frameSize))
       }
 
+      console.log('frames')
+      console.log(frames)
+
       for (let frameIndex = 0; frameIndex < frames.length; ++frameIndex) {
-        let imageData = new ImageData(width, height);
+        let imageData: ImageData = new ImageData(new Uint8ClampedArray(frames[frameIndex]), width, height);
 
-        for (let i = 0; i < imageData.length; i += 4) {
-          imageData[i] = frames[frameIndex][i]; 
-          imageData[i + 1] = frames[frameIndex][i + 1]; 
-          imageData[i + 2] = frames[frameIndex][i + 2]; 
-          imageData[i + 3] = frames[frameIndex][i + 3]; 
-        }
+        var canvas: HTMLCanvasElement = document.getElementById('canvas');
+        var ctx = canvas.getContext('2d');
 
-        const code = jsQR(imageData, width, height);
+        ctx.putImageData(imageData, width, height)
+
+        console.log(imageData)
+                
+        ctx.putImageData(imageData, imageData.height, imageData.width)
+
+        const code = jsQR(imageData.data, width, height);
   
         if (code) {
           console.log('code');
@@ -96,5 +116,32 @@
 
       }
     }
+
   });
+
+  let qrCode = null
+
+  async function encode() {
+    if (inputValue == "") return;
+
+    const qrCodeSetting = {
+        size: 300,
+        minVersion: 1,
+        maxVersion: 13, // 330 bytes
+        ecLevel: ecLevel.MEDIUM,
+    };
+
+    const element = document.getElementById("qrCode"); //Element must be an instance of HTMLCanvasElement or HTMLDivElement
+    
+    if (qrCode == null) {
+      qrCode = new qrcode(element); //Initializing the QrCode
+    }
+    
+    console.log(qrCode)
+
+    await qrCode.generate(inputValue, qrCodeSetting); // Function that generates the QrCode
+    
+    //let image = this.qrCode.getImage(); // Function to get the data Url of the QrCode Image
+
+  }
 </script>
